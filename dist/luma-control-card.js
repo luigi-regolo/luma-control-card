@@ -83,6 +83,7 @@ ha-icon{display:inline-flex;vertical-align:middle;--mdc-icon-size:20px;width:20p
 .lc-timer-status{font-size:11px;color:var(--lc-muted);margin:0 0 9px}.lc-timer-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.lc-timer-actions button{background:var(--lc-orb);color:var(--lc-text);border:1px solid var(--lc-border);border-radius:11px;padding:9px 2px;font-size:11px}.lc-timer-cancel{margin-top:9px;width:100%;padding:9px;border-radius:11px;border:1px solid var(--lc-border);background:var(--lc-orb);color:var(--lc-muted);font-size:11px}
 @container lc (max-width:420px){.lc-grid:not(.lc-single){grid-template-columns:1fr}.lc-cell{padding:10px}.lc-orb{width:35px;height:35px}.lc-head{padding-bottom:13px}.lc-title{font-size:23px}}@media(max-width:420px){.lc-root{padding:13px;border-radius:23px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 `;
+const LC_MODAL_CSS=":host{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:var(--ha-font-family-body,-apple-system,BlinkMacSystemFont,system-ui,Roboto,Arial,sans-serif)}\n.lc-root.lc-modal-scope{background:transparent;border:0;border-radius:0;padding:0;pointer-events:none}\n.lc-modal-scope .lc-backdrop{position:fixed;inset:0;display:grid;place-items:center;padding:16px;pointer-events:auto;overscroll-behavior:contain}\n.lc-modal-scope .lc-dialog{max-height:min(82dvh,720px);width:min(390px,100%);border-radius:26px;background:var(--lc-bg)}\n.lc-modal-scope .lc-dialog.lc-auto-dialog{min-height:min(290px,calc(100dvh - 32px))}\n.lc-modal-scope .lc-dialog-body{flex:1 1 auto;min-height:0;background:var(--lc-bg);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}\n.lc-modal-scope .lc-panel{background:transparent;border:0;border-radius:0;padding:10px 0 18px;margin:0}\n.lc-modal-scope .lc-panel+.lc-panel{border:0;border-top:1px solid var(--lc-border);padding-top:19px}\n.lc-modal-scope .lc-panel:last-child{padding-bottom:0}\n.lc-modal-scope .lc-auto-panel{padding:7px 0 16px}\n.lc-modal-scope .lc-color-info{background:var(--lc-tile);border-radius:13px;padding:11px 13px}\n.lc-modal-scope .lc-close{display:flex;align-items:center;justify-content:center;padding:0;line-height:0}\n.lc-modal-scope .lc-close ha-icon{display:block;width:19px;height:19px;margin:0;--mdc-icon-size:19px}\n@media(max-width:599px){.lc-modal-scope .lc-dialog{width:min(350px,100%);max-height:min(68dvh,560px);border-radius:24px}.lc-modal-scope .lc-dialog-head{padding:12px 15px}}\n@media(max-height:480px){.lc-modal-scope .lc-dialog{max-height:calc(100dvh - 32px)}}";
 function lcIcon(name){return `<ha-icon icon="${lcEsc(name)}" aria-hidden="true"></ha-icon>`;}
 class LumaControlCard extends HTMLElement {
   static getStubConfig(){const {type,...rest}=lcConfig();return rest;}
@@ -91,7 +92,7 @@ class LumaControlCard extends HTMLElement {
     super();this.attachShadow({mode:'open'});
     this._config=lcConfig();this._hass=null;this._opened=null;
     this._busy=new Set();this._busyAll=false;this._error='';this._structureKey='';
-    this._lastFocus=null;this._activeRange=null;this._scrollLock=null;this._blockedScroll=e=>{if(this._opened&&!e.composedPath().some(n=>n?.classList?.contains?.('lc-dialog-body')))e.preventDefault();};
+    this._lastFocus=null;this._activeRange=null;this._scrollLock=null;this._modalHost=null;this._blockedScroll=e=>{if(this._opened&&!e.composedPath().some(n=>n?.classList?.contains?.('lc-dialog-body')))e.preventDefault();};this._blockedKeys=e=>{if(this._opened&&['ArrowDown','ArrowUp','PageUp','PageDown','Home','End',' '].includes(e.key)&&!e.composedPath().some(n=>n?.classList?.contains?.('lc-dialog-body')))e.preventDefault();};
     this._pref=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme:dark)'):null;
     this._themeChange=()=>this._paint();
     this.shadowRoot.addEventListener('click',e=>this._click(e));
@@ -110,8 +111,8 @@ class LumaControlCard extends HTMLElement {
     });
   }
   connectedCallback(){this._pref?.addEventListener?.('change',this._themeChange);this._paint();}
-  disconnectedCallback(){this._pref?.removeEventListener?.('change',this._themeChange);this._unlockScroll();}
-  setConfig(v){this._unlockScroll();this._config=lcConfig(v);this._opened=null;this._structureKey='';this._paint();}
+  disconnectedCallback(){this._pref?.removeEventListener?.('change',this._themeChange);this._opened=null;this._unmountModal();this._unlockScroll();}
+  setConfig(v){this._opened=null;this._unmountModal();this._unlockScroll();this._config=lcConfig(v);this._structureKey='';this._paint();}
   set hass(h){this._hass=h;this._paint();}
   getCardSize(){return Math.max(2,Math.ceil(this._config.lights.length/(this._config.layout==='one'?1:2))*2+1);}
   getGridOptions(){return {columns:12,min_columns:3};}
@@ -120,7 +121,7 @@ class LumaControlCard extends HTMLElement {
   _configured(){return this._config.lights.map((item,index)=>({item,index})).filter(x=>x.item.entity);}
   _cap(item){return lcCapabilities(this._entity(item.entity));}
   _structure(){
-    return JSON.stringify([this._config,this._dark(),this._opened,
+    return JSON.stringify([this._config,this._dark(),
       this._config.lights.map(x=>{const c=this._cap(x);return [c.dim,c.rgb,c.temp];})]);
   }
   _tile(item,index){
@@ -167,7 +168,7 @@ class LumaControlCard extends HTMLElement {
       }
       if(!content)content='<p class="lc-info">Nessun controllo avanzato disponibile.</p>';
     }
-    return `<div class="lc-backdrop" data-backdrop><section class="lc-dialog" role="dialog" aria-modal="true" aria-label="${lcEsc(label)}"><header class="lc-dialog-head">${lcIcon(icon)}<strong>${lcEsc(label)}</strong><button class="lc-close" type="button" aria-label="Chiudi" data-close>${lcIcon('mdi:close')}</button></header><div class="lc-dialog-body">${content}</div></section></div>`;
+    return `<div class="lc-backdrop" data-backdrop><section class="lc-dialog ${this._opened.type==='automation'?'lc-auto-dialog':''}" role="dialog" aria-modal="true" aria-label="${lcEsc(label)}"><header class="lc-dialog-head">${lcIcon(icon)}<strong>${lcEsc(label)}</strong><button class="lc-close" type="button" aria-label="Chiudi" data-close>${lcIcon('mdi:close')}</button></header><div class="lc-dialog-body">${content}</div></section></div>`;
   }
   _paint(){
     if(!this.isConnected)return;
@@ -176,10 +177,11 @@ class LumaControlCard extends HTMLElement {
       this._structureKey=key;
       const configured=this._configured();
       const mode=configured.length===1?'lc-single':this._config.layout==='one'?'lc-one':'';
-      this.shadowRoot.innerHTML=`<style>${LC_CSS}</style><div class="lc-root ${this._dark()?'lc-dark':'lc-light'}"><header class="lc-head"><div><div class="lc-eyebrow">${lcEsc(this._config.eyebrow)}</div><div class="lc-title">${lcEsc(this._config.title)}<span class="lc-dot">.</span></div></div><button class="lc-alloff" type="button" data-alloff>${lcIcon('mdi:lightbulb-off-outline')} Spegni tutte</button></header>${configured.length?`<div class="lc-grid-host"><div class="lc-grid ${mode}">${configured.map(x=>this._tile(x.item,x.index)).join('')}</div></div>`:'<div class="lc-empty">Aggiungi una luce dall’editor della card.</div>'}${this._config.show_automation&&this._config.automation_entities.length?`<button type="button" class="lc-autom" data-open-autom>${lcIcon('mdi:robot-outline')} Automazioni</button>`:''}<div class="lc-error" role="alert" hidden></div>${this._popup()}</div>`;
-      if(this._opened)this.shadowRoot.querySelector('.lc-close')?.focus({preventScroll:true});
+      this.shadowRoot.innerHTML=`<style>${LC_CSS}</style><div class="lc-root ${this._dark()?'lc-dark':'lc-light'}"><header class="lc-head"><div><div class="lc-eyebrow">${lcEsc(this._config.eyebrow)}</div><div class="lc-title">${lcEsc(this._config.title)}<span class="lc-dot">.</span></div></div><button class="lc-alloff" type="button" data-alloff>${lcIcon('mdi:lightbulb-off-outline')} Spegni tutte</button></header>${configured.length?`<div class="lc-grid-host"><div class="lc-grid ${mode}">${configured.map(x=>this._tile(x.item,x.index)).join('')}</div></div>`:'<div class="lc-empty">Aggiungi una luce dall’editor della card.</div>'}${this._config.show_automation&&this._config.automation_entities.length?`<button type="button" class="lc-autom" data-open-autom>${lcIcon('mdi:robot-outline')} Automazioni</button>`:''}<div class="lc-error" role="alert" hidden></div></div>`;
     }
     this._sync();
+    if(this._opened&&!this._modalHost)this._mountModal();
+    if(!this._opened&&this._modalHost)this._unmountModal();
   }
   _sync(){
     const all=this._configured(),enabled=this._config.controls_enabled;
@@ -208,42 +210,45 @@ class LumaControlCard extends HTMLElement {
     if(this._opened?.type==='automation'){
       this._config.automation_entities.forEach((id,i)=>{
         const s=this._entity(id),on=s?.state==='on',known=lcKnown(s),busy=this._busy.has(id);
-        const text=this.shadowRoot.querySelector(`[data-auto-status="${i}"]`),button=this.shadowRoot.querySelector(`[data-auto-toggle="${i}"]`);
+        const text=this._modalRoot()?.querySelector(`[data-auto-status="${i}"]`),button=this._modalRoot()?.querySelector(`[data-auto-toggle="${i}"]`);
         if(text)text.textContent=!known?'Non disponibile':on?'Attivata':'Disattivata';
         if(button){button.textContent=on?'Disattiva':'Attiva';button.classList.toggle('off',on);button.disabled=!known||!enabled||busy;}
       });
     }
     if(this._opened?.type==='light'){
       const item=this._config.lights[this._opened.index],s=this._entity(item?.entity),busy=this._busy.has(item?.entity);
-      const wheel=this.shadowRoot.querySelector('.lc-wheel'),color=lcRgb(s)||'var(--lc-light)';
+      const wheel=this._modalRoot()?.querySelector('.lc-wheel'),color=lcRgb(s)||'var(--lc-light)';
       if(wheel){wheel.style.setProperty('--chosen-color',color);wheel.setAttribute('aria-valuenow',String(Math.round(s?.attributes?.hs_color?.[0]||0)));}
-      const sw=this.shadowRoot.querySelector('[data-popup-swatch]');if(sw)sw.style.setProperty('--actual-color',color);
-      this.shadowRoot.querySelectorAll('[data-hue],[data-temp-quick]').forEach(el=>el.disabled=!lcKnown(s)||!enabled||busy);
-      const temp=this.shadowRoot.querySelector('[data-temp]');if(temp){temp.disabled=!lcKnown(s)||!enabled||busy;if(temp!==this._activeRange&&this.shadowRoot.activeElement!==temp){const v=lcClamped(s?.attributes?.color_temp_kelvin||temp.value,Number(temp.min),Number(temp.max));temp.value=String(v);temp.style.setProperty('--percent',`${(v-Number(temp.min))*100/(Number(temp.max)-Number(temp.min))}%`);const t=this.shadowRoot.querySelector('[data-temp-text]');if(t)t.textContent=`${v} K`;}}
-      const timer=this._entity(item?.timer_entity),state=this.shadowRoot.querySelector('[data-timer-state]');
+      const sw=this._modalRoot()?.querySelector('[data-popup-swatch]');if(sw)sw.style.setProperty('--actual-color',color);
+      this._modalRoot()?.querySelectorAll('[data-hue],[data-temp-quick]')?.forEach(el=>el.disabled=!lcKnown(s)||!enabled||busy);
+      const temp=this._modalRoot()?.querySelector('[data-temp]');if(temp){temp.disabled=!lcKnown(s)||!enabled||busy;if(temp!==this._activeRange&&this._modalRoot()?.activeElement!==temp){const v=lcClamped(s?.attributes?.color_temp_kelvin||temp.value,Number(temp.min),Number(temp.max));temp.value=String(v);temp.style.setProperty('--percent',`${(v-Number(temp.min))*100/(Number(temp.max)-Number(temp.min))}%`);const t=this._modalRoot()?.querySelector('[data-temp-text]');if(t)t.textContent=`${v} K`;}}
+      const timer=this._entity(item?.timer_entity),state=this._modalRoot()?.querySelector('[data-timer-state]');
       if(state){state.textContent=!lcKnown(timer)?'Timer non disponibile':timer.state==='active'?'Timer attivo':timer.state==='paused'?'Timer in pausa':'Timer inattivo';}
       const timerReady=!!item?.timer_entity&&lcKnown(timer)&&['idle','active','paused'].includes(timer.state);
-      this.shadowRoot.querySelectorAll('[data-start-timer]').forEach(el=>el.disabled=!enabled||!lcKnown(s)||s?.state!=='on'||!timerReady||this._busy.has(item.timer_entity));
-      const cancel=this.shadowRoot.querySelector('[data-cancel-timer]');if(cancel)cancel.disabled=!enabled||!timerReady||timer.state==='idle'||this._busy.has(item.timer_entity);
+      this._modalRoot()?.querySelectorAll('[data-start-timer]')?.forEach(el=>el.disabled=!enabled||!lcKnown(s)||s?.state!=='on'||!timerReady||this._busy.has(item.timer_entity));
+      const cancel=this._modalRoot()?.querySelector('[data-cancel-timer]');if(cancel)cancel.disabled=!enabled||!timerReady||timer.state==='idle'||this._busy.has(item.timer_entity);
     }
   }
-  _lockScroll(){
-    if(this._scrollLock||typeof document==='undefined'||!document.documentElement||!document.body)return;
-    const html=document.documentElement,body=document.body;
-    this._scrollLock={html,body,oldHtml:html.style.overflow,oldBody:body.style.overflow};
-    html.style.overflow='hidden';body.style.overflow='hidden';
-    document.addEventListener('wheel',this._blockedScroll,{passive:false,capture:true});
-    document.addEventListener('touchmove',this._blockedScroll,{passive:false,capture:true});
+  _modalRoot(){return this._modalHost?.shadowRoot||null;}
+  _mountModal(){
+    if(!this._opened||this._modalHost||!document.body)return;
+    const host=document.createElement('div');host.setAttribute('data-luma-dialog','');const root=host.attachShadow({mode:'open'});
+    const style=getComputedStyle(this);for(const n of ['--edera-light-color','--edera-emerald-color','--ha-font-family-body']){const v=style.getPropertyValue(n).trim();if(v)host.style.setProperty(n,v);}
+    root.innerHTML=`<style>${LC_CSS}\n${LC_MODAL_CSS}</style><div class="lc-root lc-modal-scope ${this._dark()?'lc-dark':'lc-light'}">${this._popup()}</div>`;
+    for(const evt of ['click','input','change'])root.addEventListener(evt,e=>this['_'+evt](e));
+    root.addEventListener('pointerdown',e=>{if(e.target.matches('.lc-range'))this._activeRange=e.target;});
+    for(const t of ['pointerup','pointercancel'])root.addEventListener(t,()=>{this._activeRange=null;});
+    root.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();this._close();return;}
+      if(e.key==='Tab'){const arr=[...root.querySelectorAll('.lc-dialog button:not(:disabled),.lc-dialog input:not(:disabled),.lc-dialog [tabindex="0"]')];if(arr.length){const f=arr[0],l=arr[arr.length-1];if(e.shiftKey&&root.activeElement===f){e.preventDefault();l.focus({preventScroll:true});}else if(!e.shiftKey&&root.activeElement===l){e.preventDefault();f.focus({preventScroll:true});}}}
+      if(this._opened?.type==='light'&&e.target.matches('.lc-wheel')&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const item=this._config.lights[this._opened.index],state=this._entity(item?.entity);if(item&&lcCapabilities(state).rgb){const h=Number(state.attributes?.hs_color?.[0]||0),step=['ArrowRight','ArrowUp'].includes(e.key)?5:-5;this._service(item.entity,'turn_on',{hs_color:[(h+step+360)%360,100]});}}
+    });
+    this._modalHost=host;document.body.appendChild(host);root.querySelector('.lc-close')?.focus({preventScroll:true});this._sync();
   }
-  _unlockScroll(){
-    const lock=this._scrollLock;if(!lock)return;
-    lock.html.style.overflow=lock.oldHtml;lock.body.style.overflow=lock.oldBody;
-    document.removeEventListener('wheel',this._blockedScroll,true);
-    document.removeEventListener('touchmove',this._blockedScroll,true);
-    this._scrollLock=null;
-  }
-  _open(type,index){this._lastFocus=this.shadowRoot.activeElement;this._opened={type,index};this._error='';this._lockScroll();this._paint();}
-  _close(){this._opened=null;this._error='';this._unlockScroll();this._paint();this._lastFocus?.focus?.({preventScroll:true});this._lastFocus=null;}
+  _unmountModal(){this._modalHost?.remove();this._modalHost=null;}
+  _lockScroll(){if(this._scrollLock)return;this._scrollLock=true;document.addEventListener('wheel',this._blockedScroll,{passive:false,capture:true});document.addEventListener('touchmove',this._blockedScroll,{passive:false,capture:true});document.addEventListener('keydown',this._blockedKeys,true);}
+  _unlockScroll(){if(!this._scrollLock)return;document.removeEventListener('wheel',this._blockedScroll,true);document.removeEventListener('touchmove',this._blockedScroll,true);document.removeEventListener('keydown',this._blockedKeys,true);this._scrollLock=null;}
+  _open(type,index){if(this._opened)return;this._lastFocus=this.shadowRoot.activeElement;this._opened={type,index};this._error='';this._lockScroll();this._mountModal();}
+  _close(){this._opened=null;this._error='';this._unmountModal();this._unlockScroll();this._sync();this._lastFocus?.focus?.({preventScroll:true});this._lastFocus=null;}
   async _service(id,action,data={}){
     if(!this._config.controls_enabled||!id||this._busy.has(id)||!lcKnown(this._entity(id))||typeof this._hass?.callService!=='function')return;
     const domain=id.split('.')[0],allowed={light:['turn_on','turn_off'],switch:['turn_on','turn_off'],automation:['turn_on','turn_off'],timer:['start','cancel']};
@@ -277,7 +282,7 @@ class LumaControlCard extends HTMLElement {
     }
     const quick=ev.target.closest('[data-temp-quick]');if(quick&&this._opened?.type==='light'){
       const x=this._config.lights[this._opened.index],s=this._entity(x?.entity);if(!lcCapabilities(s).temp)return;
-      const input=this.shadowRoot.querySelector('[data-temp]');if(!input)return;
+      const input=this._modalRoot()?.querySelector('[data-temp]');if(!input)return;
       const min=Number(input.min),max=Number(input.max),pos=quick.dataset.tempQuick,v=pos==='warm'?min:pos==='cool'?max:Math.round((min+max)/2);
       this._service(x.entity,'turn_on',{color_temp_kelvin:v});return;
     }
@@ -304,7 +309,7 @@ class LumaControlCard extends HTMLElement {
     const val=Number(range.value),pct=range.hasAttribute('data-bright')?val:(val-Number(range.min))*100/(Number(range.max)-Number(range.min));
     range.style.setProperty('--percent',`${pct}%`);
     if(range.hasAttribute('data-bright')){const el=this.shadowRoot.querySelector(`[data-pct="${Number(range.dataset.bright)}"]`);if(el)el.textContent=`${val}%`;}
-    else{const el=this.shadowRoot.querySelector('[data-temp-text]');if(el)el.textContent=`${val} K`;}
+    else{const el=this._modalRoot()?.querySelector('[data-temp-text]');if(el)el.textContent=`${val} K`;}
   }
   _change(ev){
     const range=ev.target.closest('[data-bright],[data-temp]');if(!range)return;
