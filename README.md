@@ -1,8 +1,8 @@
 # Luma Control Card
 
-[![TikTok | Segui](assets/tiktok-segui.svg)](https://www.tiktok.com/@luigi.regolo)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5?style=flat-square)](https://my.home-assistant.io/redirect/hacs_repository/?owner=luigi-regolo&repository=luma-control-card&category=plugin)
+[![Release](https://img.shields.io/github/v/release/luigi-regolo/luma-control-card?label=Release&style=flat-square)](https://github.com/luigi-regolo/luma-control-card/releases/latest)
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue?style=flat-square)](LICENSE)
-[![HACS](https://img.shields.io/badge/HACS-Repository-41BDF5?style=flat-square)](https://my.home-assistant.io/redirect/hacs_repository/?owner=luigi-regolo&repository=luma-control-card&category=plugin)
 [![GitHub Stars](https://img.shields.io/github/stars/luigi-regolo/luma-control-card?style=flat-square)](https://github.com/luigi-regolo/luma-control-card/stargazers)
 
 ## Overview
@@ -15,9 +15,13 @@ The card uses existing Home Assistant entities and services. No dedicated accoun
 
 ## Preview
 
-![Luma Control Card — Graphite Dark dashboard preview](assets/luma-control-card-preview.png)
+| Light | Dark |
+| --- | --- |
+| ![Luma Control Card in Light mode](assets/luma-control-card-light.png) | ![Luma Control Card in Dark mode](assets/luma-control-card-dark.png) |
 
-*Luma Control Card interface in Graphite Dark mode. Available controls depend on the configured lighting entities and their supported capabilities.*
+![Luma Control Card color and temperature popup, Light mode](assets/luma-control-card-popup-light.png)
+
+*Previews use fictional demo data. Available controls depend on the configured lighting entities and their supported capabilities. The interface text is currently in Italian.*
 
 ## Features
 
@@ -38,14 +42,29 @@ Controls are displayed according to the capabilities reported by each light.
 
 ## Installation
 
-### HACS
+### HACS (Recommended)
+
+Install Luma Control Card directly from the default HACS catalog.
+
+[![Open Luma Control Card in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=luigi-regolo&repository=luma-control-card&category=plugin)
 
 1. Open **HACS** in Home Assistant.
-2. Open the menu and select **Custom repositories**.
-3. Enter `https://github.com/luigi-regolo/luma-control-card`.
-4. Select **Dashboard** as the category.
-5. Add the repository and download **Luma Control Card**.
-6. Reload the dashboard and add the card using the visual editor.
+2. Search for **Luma Control Card**.
+3. Select **Luma Control Card** from the results.
+4. Click **Download** to install the card.
+5. Reload your dashboard if necessary.
+6. Add **Luma Control Card** to your dashboard and configure it using the visual editor.
+
+To install a specific release, use **Download** or **Redownload** and select the desired version when available.
+
+### Alternative: Custom repository
+
+If you prefer to add the repository manually:
+
+1. Open **HACS** and select **Custom repositories** from the menu.
+2. Enter `https://github.com/luigi-regolo/luma-control-card`.
+3. Select **Dashboard** as the repository type and add it.
+4. Find **Luma Control Card** in HACS and download it.
 
 ### Manual installation
 
@@ -105,6 +124,10 @@ All actions use Home Assistant services and are subject to the user's Home Assis
 Luma Control Card does not independently collect telemetry, store credentials, or communicate with external services.
 
 The card runs within the Home Assistant dashboard and uses the entity data and services available to the current user.
+
+## Releases
+
+See [GitHub Releases](https://github.com/luigi-regolo/luma-control-card/releases) for published versions.
 
 ## Copyright & License
 
