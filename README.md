@@ -9,7 +9,7 @@
 
 **Luma Control Card** is a custom lighting control card for Home Assistant dashboards, designed with a minimalist interface inspired by the Edera Light and Graphite Dark visual styles.
 
-It brings together multiple lights in a compact, responsive layout with brightness adjustments, RGB color selection, color temperature controls, and optional automation and timer management.
+It shows multiple lights as vertical brightness faders in a compact, responsive layout. Color, color temperature, timer, and automations for each light are available in its details popup.
 
 The card uses existing Home Assistant entities and services. No dedicated account, paid API, additional cloud service, or Edera theme installation is required.
 
@@ -19,20 +19,20 @@ The card uses existing Home Assistant entities and services. No dedicated accoun
 | --- | --- |
 | ![Luma Control Card in Light mode](assets/luma-control-card-light.png) | ![Luma Control Card in Dark mode](assets/luma-control-card-dark.png) |
 
-![Luma Control Card color and temperature popup, Light mode](assets/luma-control-card-popup-light.png)
+![Luma Control Card details popup in Light mode](assets/luma-control-card-popup-light.png)
 
 *Previews use fictional demo data. Available controls depend on the configured lighting entities and their supported capabilities. The interface text is currently in Italian.*
 
 ## Features
 
-- Compact, responsive lighting grid with configurable layout.
-- Individual on/off controls for `light.*` entities.
-- Brightness adjustment for compatible lights.
-- RGB color wheel with quick color presets.
-- Adjustable color temperature with warm, neutral, and cool presets.
+- Vertical brightness faders, one per `light.*` entity, with a dedicated on/off button.
+- Tapping a fader never changes the level: brightness changes only by dragging, and a light is never turned on by accident.
+- Navigation arrows when the lights do not fit the available width.
+- Details popup for each light with status, RGB color wheel and presets, color temperature, optional timer, and its automations.
+- Per-light automations with individual enable/disable controls.
+- Optional card-level automation buttons below the lights.
+- Optional ambient glow, and options to hide the header eyebrow and the title.
 - Turn off all configured lights with one command.
-- Multiple Home Assistant automations with individual enable/disable controls.
-- Optional timer controls for individual lights.
 - Automatic, Edera Light, and Graphite Dark appearance modes.
 - Visual configuration editor with entity selection, reordering, customization, and removal.
 - Responsive popups optimized for desktop, tablet, and smartphone.
@@ -80,22 +80,22 @@ If you prefer to add the repository manually:
 
 The visual editor includes four sections:
 
-- **Devices:** Select `light.*` entities, customize names and optional MDI icons, reorder devices, or remove them.
-- **Appearance:** Configure the title, header, theme, and grid layout.
-- **Automations:** Associate multiple existing `automation.*` entities and manage their enabled state.
+- **Devices:** Select `light.*` entities, customize names and optional MDI icons, reorder devices, assign automations to each light, or remove them.
+- **Appearance:** Configure the title, header, theme, and ambient glow.
+- **Automations:** Optionally associate existing `automation.*` entities as buttons on the card.
 - **Advanced:** Enable or disable the card's controls.
 
 ### Lighting Controls
 
-Each configured light displays the controls supported by its Home Assistant integration.
+Each light is shown as a vertical fader. Drag it to set the brightness, or use the arrow keys when it is focused. Tapping the fader does not change the level. Use the power button below it to turn the light on or off.
 
-Brightness, RGB color, and color temperature controls are displayed only when available.
+**Details and status** opens the details popup, where color, color temperature, timer, and the light's automations are available when supported by the light and the configuration.
 
 The **Turn off all** button switches off the configured lights without disabling their associated automations.
 
 ### Automations
 
-Existing Home Assistant automations can be enabled or disabled directly from the card.
+Existing Home Assistant automations can be enabled or disabled from the details popup of each light, or from optional buttons on the card.
 
 The card does not create automations or immediately execute their actions when enabled.
 
