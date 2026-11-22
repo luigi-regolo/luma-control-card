@@ -9,7 +9,7 @@
 
 **Luma Control Card** is a custom lighting control card for Home Assistant dashboards, designed with a minimalist interface inspired by the Edera Light and Graphite Dark visual styles.
 
-It shows multiple lights as vertical brightness faders in a compact, responsive layout. Color, color temperature, timer, and automations for each light are available in its details popup.
+It shows your lights in one of three styles (vertical faders, horizontal bars, or glowing tiles) in a compact, responsive layout that adapts to the number of lights. Color, color temperature, timer, and automations for each light are available in a fixed-size details popup. The interface is available in Italian, English, German, and French.
 
 The card uses existing Home Assistant entities and services. No dedicated account, paid API, additional cloud service, or Edera theme installation is required.
 
@@ -21,14 +21,16 @@ The card uses existing Home Assistant entities and services. No dedicated accoun
 
 ![Luma Control Card details popup in Light mode](assets/luma-control-card-popup-light.png)
 
-*Previews use fictional demo data. Available controls depend on the configured lighting entities and their supported capabilities. The interface text is currently in Italian.*
+*Previews use fictional demo data. Available controls depend on the configured lighting entities and their supported capabilities.*
 
 ## Features
 
-- Vertical brightness faders, one per `light.*` entity, with a dedicated on/off button.
+- Three card styles: vertical faders, horizontal bars, or tiles with a glow. The layout stays compact with only one or two lights.
+- One `light.*` entity per light, with a dedicated on/off button.
 - Tapping a fader never changes the level: brightness changes only by dragging, and a light is never turned on by accident.
-- Navigation arrows when the lights do not fit the available width.
-- Details popup for each light with status, RGB color wheel and presets, color temperature, optional timer, and its automations.
+- Navigation arrows in the fader style when the lights do not fit the available width.
+- Fixed-size details popup with an On/All filter and one expandable section per light: status, RGB color wheel and presets, color temperature, optional timer, and its automations. On wide screens the lights are shown in columns.
+- Interface in Italian, English, German, and French, selected automatically from the Home Assistant language or set manually.
 - Per-light automations with individual enable/disable controls.
 - Optional card-level automation buttons below the lights.
 - Optional ambient glow, and options to hide the header eyebrow and the title.
@@ -71,15 +73,15 @@ Install Luma Control Card directly from the default Marketplace catalog in Home 
 The visual editor includes four sections:
 
 - **Devices:** Select `light.*` entities, customize names and optional MDI icons, reorder devices, assign automations to each light, or remove them.
-- **Appearance:** Configure the title, header, theme, and ambient glow.
+- **Appearance:** Choose the card style, title, header, theme, language, and ambient glow.
 - **Automations:** Optionally associate existing `automation.*` entities as buttons on the card.
 - **Advanced:** Enable or disable the card's controls.
 
 ### Lighting Controls
 
-Each light is shown as a vertical fader. Drag it to set the brightness, or use the arrow keys when it is focused. Tapping the fader does not change the level. Use the power button below it to turn the light on or off.
+Each light has a brightness slider (a fader, a bar, or a tile slider, depending on the chosen style). Drag it to set the brightness, or use the arrow keys when it is focused. Tapping the slider does not change the level. Use the power button to turn the light on or off.
 
-**Details and status** opens the details popup, where color, color temperature, timer, and the light's automations are available when supported by the light and the configuration.
+The round details button next to the power button opens the details popup, where color, color temperature, timer, and the light's automations are available when supported by the light and the configuration. Use the **On / All** filter to choose which lights are listed.
 
 The **Turn off all** button switches off the configured lights without disabling their associated automations.
 
